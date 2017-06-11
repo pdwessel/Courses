@@ -1,0 +1,245 @@
+---
+title: "Week 3 Notes"
+author: "pdwessel"
+date: "September 25, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Sybsetting and Sorting
+
+Review - subsetting
+```{r}
+set.seed(13435)
+X <- data.frame("var1"=sample(1:5), "var2"=sample(6:10), "var3"=sample(11:15))
+
+X <- X[sample(1:5),];X$var2[c(1,3)]= NA
+X
+
+```
+
+Ordering with plyr
+```{r}
+library(plyr)
+
+arrange(X,var1)
+
+arrange(X,desc(var1))
+```
+
+##Summarizing Data
+
+Getting Data from the web
+```{r, echo = FALSE}
+fileurl <- "https://data.baltimorecity.gov/api/views/k5ry-ef3g/rows.csv?accessType=DOWNLOAD"
+download.file(fileurl,destfile = "./data/restaurants.csv", method = "curl")
+restData <- read.csv("./data/restaurants.csv")
+
+```
+
+Summary functions
+```{r}
+head(restData,n=3)
+tail(restData,n=3)
+summary(restData)
+str(restData)
+
+```
+
+Quantiles
+```{r}
+quantile(restData$councilDistrict,na.rm=TRUE)
+quantile(restData$councilDistrict, probs=c(0.5,0.75,0.9))
+```
+
+Tables
+```{r}
+table(restData$zipCode, useNA = "ifany")
+
+table(restData$councilDistrict, restData$zipCode)
+```
+
+Checking for missing values
+```{r}
+
+sum(is.na(restData$councilDistrict))
+any(is.na(restData$councilDistrict))
+all(restData$councilDistrict >0)
+```
+
+Values with specific charateristics
+```{r}
+table(restData$zipCode %in% c("21212"))
+table(restData$zipCode %in% c("21212","21213"))
+
+restData[restData$zipCode %in% c("21212","21213"),]
+```
+
+Crosstabs
+```{r}
+data("UCBAdmissions")
+DF = as.data.frame(UCBAdmissions)
+summary(DF)
+
+xt <-xtabs(Freq ~ Gender + Admit, data=DF)
+xt
+```
+
+Flat tables
+```{r}
+warpbreaks$replicate <- rep(1:9, len=54)
+xt <- xtabs(breaks ~.,data=warpbreaks)
+xt
+ftable(xt)
+```
+
+Size of Data set
+```{r}
+fakeData = rnorm(1e5)
+object.size(fakeData)
+
+print(object.size(fakeData), units = "Mb")
+```
+
+
+##Creating new Variables
+
+Using Baltimore restaurant data again
+
+Creating Sequences
+```{r}
+s1 <- seq(1,10,by=2) ; s1
+s2 <- seq(1,10,length=3) ; s2
+x<- c(1,3,8,25,100); seq(along = x)
+```
+
+Subsettign variables
+```{r}
+restData$nearMe = restData$neighborhood %in% c("Roland Park", "Homeland")
+table(restData$nearMe)
+```
+
+Creating binary variables
+```{r}
+restData$zipWrong = ifelse(restData$zipCode <0, TRUE, FALSE)
+table(restData$zipWrong, restData$zipCode<0)
+```
+
+Creating categorial variables
+```{r}
+restData$zipGroups = cut(restData$zipCode, breaks = quantile(restData$zipCode))
+
+table(restData$zipGroups)
+
+table(restData$zipGroups, restData$zipCode)
+```
+
+Easier cutting
+```{r}
+library(Hmisc)
+restData$zipGroups = cut2(restData$zipCode, g=4)
+table(restData$zipGroups)
+```
+
+Creating Factor Variables
+```{r}
+restData$zcf <- factor(restData$zipCode)
+restData$zcf[1:10]
+```
+
+Using the mutate function
+```{r}
+restData2 = mutate(restData, zipGroups=cut2(zipCode, g=4))
+table(restData2$zipGroups)
+```
+
+plyr tutorial
+http://plyr.had.co.nz/09-user/
+
+##Re-shaping the Data
+
+Start with reshaping
+```{r}
+library(reshape2)
+head(mtcars)
+```
+
+Melting the data frames
+```{r}
+
+mtcars$carname <- rownames(mtcars)
+carMelt <- melt(mtcars, id=c("carname", "gear", "cyl"),measure.vars = c("mpg","hp"))
+head(carMelt,n=3)
+```
+
+Casting data frames
+```{r}
+cylData <-dcast(carMelt, cyl ~ variable)
+cylData
+
+cylData <- dcast(carMelt, cyl ~ variable,mean)
+cylData
+```
+
+Averaging values
+```{r}
+tapply(InsectSprays$count, InsectSprays$spray, sum)
+
+spIns = split(InsectSprays$count, InsectSprays$spray)
+spIns
+
+sprCount = lapply(spIns, sum)
+sprCount
+
+unlist(sprCount)
+
+sapply(spIns, sum)
+```
+
+Another way - plyr
+```{r}
+library(plyr)
+ddply(InsectSprays, .(spray), plyr::summarize, sum=sum(count))
+```
+
+##Managing data frames with dplyr
+
+Main verbs
+*select
+*filter
+*arrange
+*mutate
+*rename
+*summarise / summarize
+
+##Merging Data
+
+Peer Review Data
+```{r}
+fileUrl1 = "https://dl.dropboxusercontent.com/u/7710864/data/reviews-apr29.csv"
+fileUrl2 = "https://dl.dropboxusercontent.com/u/7710864/data/solutions-apr29.csv"
+if(!file.exists("./data/reviews.csv")) {
+  download.file(fileUrl1,destfile="./data/reviews.csv",method="curl")
+}
+if(!file.exists("./data/solutions.csv")) {
+  download.file(fileUrl2,destfile="./data/solutions.csv",method="curl")
+}
+reviews = read.csv("./data/reviews.csv")
+solutions = read.csv("./data/solutions.csv")
+head(reviews,2)
+```
+
+Merge command (id and solution_id)
+```{r}
+mergedData = merge(reviews, solutions, by.x="solution_id", by.y="id", all=TRUE)
+
+head(mergedData)
+```
+
+```{r}
+intersect(names(solutions),names(reviews))
+```
+

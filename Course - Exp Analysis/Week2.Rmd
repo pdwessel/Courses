@@ -1,0 +1,38 @@
+---
+title: "Week2"
+author: "pdwessel"
+date: "November 27, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###The Lattice Plotting System
+
+The lattice plotting system is implemented using the following packages:
+
+* lattice: contains code for producing Trellis graphics, which are independent of the "base" graphics system; includes functions like 'xyploy', 'bwplot', 'levelplot'
+* grid: implements a different graphing system independent of the "base" system; the lattice package builds on top of grid
+
+```{r}
+library(lattice)
+set.seed(10)
+x <- rnorm(100)
+f <- rep(0:1, each = 50)
+y <- x + f - f * x + rnorm(100, sd = 0.5)
+f <- factor(f, labels = c("Group 1", "Group 2"))
+xyplot(y~x|f, layout = c(2,1))
+```
+
+```{r}
+xyplot(y~x|f, panel = function(x, y, ...) {
+        panel.xyplot(x,y,...)
+        panel.abline(h = median(y), lty = 2)
+})
+
+```
+
+###The ggplot2 package
+

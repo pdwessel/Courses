@@ -1,0 +1,51 @@
+---
+title: "Regression - Week 3"
+output: html_notebook
+---
+
+### Multivariable Regression
+
+The linear model is given by:
+$$Y_i = \beta_{1}X_{1i} + \beta_{2}X_{2i} + \dots + \beta_{p}X_{pi} + \epsilon_i = \sum_{k=1}^{p}X_{ik}\beta_j + \epsilon_i$$
+
+```{r, echo=TRUE}
+n = 100; x = rnorm(n); x2 = rnorm(n); x3 = rnorm(n)
+y = 1 + x + x2 + x3 + rnorm(n, sd = .1)
+ey = resid(lm(y~x2 + x3))
+ex = resid(lm(x ~ x2 + x3))
+sum(ey*ex)/sum(ex^2)
+coef(lm(y~x+x2+x3))[2]
+```
+
+Some things that can be accomplished with linear models:
+
+* Decompose a signal into harmonis
+* Flexibly fit complicated functions
+* Fit factor variables as predictors
+* Uncover complex multivariate relationships with the response
+* Build accurate prediction models
+
+### Multivariable Regression Tips and Tricks
+
+```{r}
+require(datasets); data(swiss);  #?swiss
+library(GGally); library(ggplot2)
+g = ggpairs(swiss, lower = list(continuous = "smooth"), paras = c(method = "loess"))
+g
+```
+
+```{r}
+## Calling "lm"
+summary(lm(Fertility ~., data = swiss))$coefficients
+
+```
+
+```{r}
+summary(lm(Fertility~Agriculture, data = swiss))
+```
+```{r}
+n <- 100; x2 <- 1:n; x1 <- .01*x2 + runif(n,-.1,.1); y <- -x1 + x2 + rnorm(n, sd = .01)
+summary(lm(y~x1))$coef
+summary(lm(y~x1+x2))$coef
+        
+```

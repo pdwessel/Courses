@@ -1,0 +1,74 @@
+---
+title: "Statistical Inference - Course Project Part 2"
+author: "Pieter Wessel"
+date: "February 19, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Overview
+
+This report is for the final (and only) course project for the Statistical Inference course. It addresses Part 2.
+
+## Part 2 - Basic Inferential Data Analysis
+
+### Load
+
+```{r code4}
+library(datasets)
+```
+
+### Summarize
+Loading the toothgrowth dataset we can see that there are three variable; length, supp (suppliment type) and dose (milligrams/day). A summary of the variables is given below.
+
+```{r code5}
+summary(ToothGrowth)
+```
+
+### Difference in Treatment (Delivery Method)
+
+I am going to see if the delivery method (orange juice (OJ) or ascorbic acid (VC)) produced statistically significant diffences in length. The 95% confidence intervals that the difference in mean tooth length for each delivery method by does are (In order 05, 1.0 and 2.0):
+
+```{r code6}
+d05 <- with(ToothGrowth, t.test(len[supp=="OJ" & dose == 0.5], len[supp=="VC" & dose == 0.5], 
+                                alternative = "two.sided")$conf)
+d10 <- with(ToothGrowth, t.test(len[supp=="OJ" & dose == 1], len[supp=="VC" & dose == 1], 
+                                alternative = "two.sided")$conf)
+d20 <- with(ToothGrowth, t.test(len[supp=="OJ" & dose == 2], len[supp=="VC" & dose == 2], 
+                                alternative = "two.sided")$conf)
+d05
+d10
+d20
+```
+
+We see that for small doses (0.5 and 1.0) there is a statistically significant different affect on the length of tooth as the 95% confidence interval does not contain 0 (which would suggest they could be the same). However, at a dose of 2.0 milligrams per day the delivery method does not matter. 
+
+### Difference in Dosage
+
+Then looking at the effect dose size has on length (using the OJ delivery method), first comparing a dose of 0.5 to 1.0, then 1.0 to 2.0:
+
+```{r code7}
+with(ToothGrowth, t.test(len[supp=="OJ" & dose == 0.5], len[supp=="OJ" & dose == 1.0], 
+                                alternative = "two.sided")$conf)
+
+with(ToothGrowth, t.test(len[supp=="OJ" & dose == 1.0], len[supp=="OJ" & dose == 2.0], 
+                                alternative = "two.sided")$conf)
+```
+
+And using VC delivery method:
+
+```{r code8}
+with(ToothGrowth, t.test(len[supp=="VC" & dose == 0.5], len[supp=="VC" & dose == 1.0], 
+                                alternative = "two.sided")$conf)
+
+with(ToothGrowth, t.test(len[supp=="VC" & dose == 1.0], len[supp=="VC" & dose == 2.0], 
+                                alternative = "two.sided")$conf)
+```
+
+In all comparisons, increasing the dosage does have a statistically significant affect on the tooth length as none of the 95% confidence intervals contain 0. 
+
+### Conclusion
+
+My assumpion in all of these test is that the subjects are iid. In general, higher does promote more tooth growth, in lower doses OJ is the more effective delivery method, while at a dose of 2.0 the delivery method doesn't matter.

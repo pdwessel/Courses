@@ -1,0 +1,27 @@
+---
+title: "Week 2 Notes"
+author: "pdwessel"
+date: "December 17, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+```{r fitmodel}
+library(datasets)
+data(airquality)
+fit <- lm(Ozone ~ Wind + Temp + Solar.R, data = airquality)
+```
+
+Here is a table of regression coefficients
+
+```{r showtable, results = "asis"}
+library(xtable)
+xt <- xtable(summary(fit))
+print(xt, type = "html")
+```
+
