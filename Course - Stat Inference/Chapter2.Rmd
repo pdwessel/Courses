@@ -1,0 +1,34 @@
+---
+title: "Chapter 2 - Inference Using t-Distributions"
+author: "The Statistical Sleuth"
+date: "February 2, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(Sleuth3)
+library(lattice)
+```
+## Inference Using t-Distributions
+
+### One-Sample t-Tools and the paired t-test
+
+If a population has a mean $\mu$ and a standard deviation $\sigma$, then the mean of the sampling distribution of the average is also $\mu$, the standard deviation of the sampling distribution is $\sigma/\sqrt{n}$, and the shape of the sampling distribution is more nearly normal than is the shape of the population distribution. 
+The standard deviation in the sampling distribution of an average, denoted by $SD(\bar{Y})$, is the typical size of $(\bar{Y}-\mu)$, the error in using $\bar{Y}$ as an estimate of $\mu$. This standard deviation gets smaller as the sample size increases. 
+
+### The Standard Error of an Average in Random Sampling
+
+The *standard error* of any statistic is an estimate of the standard deviation in its sampling distribution. Associated with standard error is a measure of the amount of information used to estimate variability, called its *degrees of freedom*. Degrees of freedom are measured in units of "equivalent number of independent observations."
+
+The formula for the standard deviation of the average in a sample size  $n$ is $\sigma/\sqrt{n}$, so if $s$ is the sample standard deviation, the standard error for the average is $$SE(\bar{Y}) = \frac{s}{\sqrt{n}}, d.f. = (n-1))$$
+
+The degrees of freedom in a single sample standard deviation is always one less than the sample size. 
+
+### The t-Ratio Based on a Sample Average
+
+The ratio of an estimate's error to the anticipated size of its error provides a convenient basis for drawing inferences about the parameter in question. 
+
