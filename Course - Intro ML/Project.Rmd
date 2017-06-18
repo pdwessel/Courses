@@ -9,6 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+#load all relevant libraries
+library(caret); library(kernlab); library(ggplot2)
+
+```
+
 ### Get the data
 ```{r}
 #Create a file to download the data to
@@ -32,5 +38,45 @@ if (!file.exists(testfile)) {
 ### Read in the data to train the model
 
 ```{r}
-ModelData <- read.csv(trainfile)
+RawData <- read.csv(trainfile)
+```
+
+### Cleaning up the Data
+
+1. Identify the variables with a high proportion of NA's
+
+```{r}
+naVariables <- sapply(RawData, function(y) sum(length(which(is.na(y)))))
+remove1 <- naVariables > 0 #All the variables with NA values actually have 19216 missing values or 98% of the inputs. 
+
+```
+
+2. Identify the variables that de-generalize the model (e.g. names  - there are more that 6 names in the world)
+
+```{r}
+noInfoVariables <- c("X", "user_name", "cvtd_timestamp")
+remove2 <- is.element(names(RawData), noInfoVariables)
+```
+
+
+3. Generate the model data by removing the identified variables
+
+```{r}
+remove <- !remove1&!remove2
+ModelData <- RawData[remove]
+```
+
+### Building the Model
+
+#### Split the training data
+```{r}
+inTrain <- createDataPartition(y=ModelData$classe, p=0.75, list=FALSE)
+training <- ModelData[inTrain,]
+testing <- ModelData[-inTrain,]
+dim(training)
+```
+
+#### Fit a model
+```{r}
+modelFit <- train(classe~., data = ModelData, method = "glm")
 ```
