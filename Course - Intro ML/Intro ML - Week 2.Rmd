@@ -1,0 +1,32 @@
+---
+title: "R Notebook"
+output:
+  html_notebook: default
+  html_document: default
+---
+
+### Data Splitting
+
+```{r}
+library(caret); library(kernlab); data(spam)
+```
+
+Data Splitting Example
+```{r}
+inTrain <- createDataPartition(y=spam$type, p=0.75, list=FALSE)
+
+training <- spam[inTrain,]
+testing <- spam[-inTrain,]
+dim(training)
+```
+
+Example: K-fold (split training set into smaller training sets)
+```{r}
+set.seed(32323)
+folds <- createFolds(y=spam$type, k=10, list=TRUE, returnTrain = TRUE)
+sapply(folds, length)
+```
+
+
+### Covariate Creation
+

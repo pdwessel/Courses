@@ -1,0 +1,47 @@
+---
+title: "Chapter 1 - Notes from The Statistical Sleuth"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = FALSE}
+library(Sleuth3)
+library(lattice)
+```
+
+### Statistical Inference and Study Design
+
+In a *randomized experiement*, the investigator controls the assignment of experimental units to groups and uses a chance mechanism. In an *observation study*, the group of the subjects is established beyond the control of the investigator (gender).
+
+#### Casual Conclusions
+
+Statistical inferences of cause-and-effect relationships can be dwarn from randomized experiments, but not observational studies. 
+
+In an observational study, it is impossible to draw a causal conclusion from the statistical analysis alone. One cannot rule out the possibility that confounding variables are responsible for group differences in the measured outcome
+
+* A *confounding variable* is related both to group membership and the outcome. Its presence makes it hard to establish the outcome as being a direct consequence of group membership.
+
+#### Inference to Populations
+
+In a *random sampling* study, units are selected by the investigator from a well-defined population. All units have the same chance of being selected, and the investigator employs a chance mechanism. 
+
+Inferences to **populations** can be drawn from random sampling studies, but not otherwise.
+
+* An **inference** is a conclusion that patterns in data are present in some broader context. 
+* A **statistical inference** is an inference justified by a probability model linking the data to the broader context.
+
+### Measuring Uncertainty in Randomized Experiments
+
+A *statistic* is a numerical quantity calculated from the data. A *test statistic* is a statistic used to measure the plausibility of an alternative hypothesis relative to a null hypothesis. 
+
+In a randomized experiment, the p-value is the probability that randomization alone leads to a test statistic as extreme or more extreme than the one observed.
+
+### Summary
+
+Cause-and-effect relationships can be inferred from randomized experiments but not from observational studies. The problem with observational studies is that confoundinf variables - identifiable or not - may be responsible for observed differences. Randomized experiments eliminate this problem by ensuring that differences between groups (other than those of the assigned treatments) are dur to chance alone. Statistical measures of uncertainty account for this chance. 
+
+Statistically, the statements that generalize sample results to more general contexts are based on a probability model. When the model corresponds to the planned use of randomization or random sampling, it provides a firm basis for drawing inferences. The probability model may also be a fiction, created for the purpose of assessing the uncertainty. Results from fictitious models must be viewed with skepticism.
+

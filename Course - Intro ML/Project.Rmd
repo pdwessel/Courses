@@ -1,0 +1,135 @@
+---
+title: "Course Project"
+author: "pdwessel"
+date: "June 11, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+```{r}
+#load all relevant libraries
+library(caret); library(kernlab); library(ggplot2); library(scales)
+```
+### Introduction
+
+This report covers the final project for the Introduction to Machince Learning Course. In the report I will go through how the data was reteived and cleaned. How the model was built and how it performed and a few of the checks I used along the way to ensure I was on the correct path.
+
+
+### Get the data
+```{r}
+#Create a file to download the data to
+if (!dir.exists("data")) {
+        dir.create("data")
+}
+
+#Download the data
+trainurl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testurl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+trainfile <- "data/train.csv"
+testfile <- "data/test.csv"
+if (!file.exists(trainfile)) { 
+        download.file(trainurl, trainfile)
+}
+if (!file.exists(testfile)) {
+        download.file(testurl, testfile)
+}
+```
+
+### Read in the data to train the model
+
+```{r}
+RawData <- read.csv(trainfile)
+```
+
+### Cleaning up the Data
+
+1. Force the data to numeric data. Note that I explicitly remove the classe and new_window from this operation as I want to keep these variables as factors. Many of the variables have empty or error entries which are forced to 'NA' and will be dealt with in the following steps.
+
+```{r clean1}
+indx <- sapply(RawData, is.factor)
+indx[c(6,160)] <- FALSE
+RawData[indx] <- lapply(RawData[indx], function(x) as.numeric(as.character(x)))
+
+```
+
+
+2. Identify the variables with a high proportion of NA's. There are a number of variables which have more than 98% of their values as 'NA'. I will exclude them from the model. 
+
+```{r clean2}
+naVariables <- sapply(RawData, function(y) sum(length(which(is.na(y)))))
+remove1 <- naVariables > 0 #All the variables with NA values actually have 19216 missing values or 98% of their inputs. 
+
+```
+
+3. Identify the variables that de-generalize the model (e.g. names  - there are more that 6 names in the world). For this step I took a look at the dataset and made a decision to exclude the variables identified in the code chunk below in the 'noInfoVariables' vector as inputs to the model. 
+
+```{r clean3}
+noInfoVariables <- c("X", "user_name", "cvtd_timestamp", "raw_timestamp_part_1", "raw_timestamp_part_2")
+remove2 <- is.element(names(RawData), noInfoVariables)
+```
+
+4. Generate the model data by removing the identified variables. In the previous steps I have identifed the variables (contained in the vectors 'remove1 and remove2') which I don't want in my model. Now I generate the data used to build the model by removing them from the data. 
+
+```{r clean4}
+remove <- !remove1&!remove2
+ModelData <- RawData[remove]
+```
+
+
+
+### Building the Model
+
+I start splitting the data set into training and test sets, in order to cross validate the model upon completion. I will use 75% of the data to train the model and the remaining 25% to cross validate. 
+
+#### Split the training data
+```{r split-data}
+inTrain <- createDataPartition(y=ModelData$classe, p=0.75, list=FALSE)
+training <- ModelData[inTrain,]
+testing <- ModelData[-inTrain,]
+```
+Perform a quick chech to see that the training set covers all classes. To do this I have plootted the historgram below of the training data. 
+
+```{r train-hist}
+histogram(training$classe, main = "Histogram of classes in training data")
+```
+While one classe is sampled a little bit more than the others, overall there is no serious deficiency foy any classe which would impede the training of the model.
+
+
+#### Fit a model
+
+For this model, I will use a random forest model. This method fits will with the outcome variable a factor with 5 levels.
+
+```{r model-build, cache=TRUE}
+modelFit <- train(classe~., data = training, method = "rf")
+```
+
+### Cross Validation
+
+When we split the data we set aside approximately 25% of the dataset for corss validation. Below is a table which summarize the predicted classe from the model versus the actual classe. 
+
+```{r}
+pred <- predict(modelFit, testing)
+testing$pred <- pred==testing$classe  
+table(pred, testing$classe)
+```
+
+### Error Rate
+
+From the table, it is clear that the model is realitively accurate. Below find the calculated error rate for the model. Again this is calculated using the data set aside to cross validate the model.
+
+```{r}
+paste("The error rate is", percent(length(testing$pred[testing$pred==FALSE])/length(testing$pred)))
+```
+
+### Conclusion
+
+A random forest model was built using the Weight Lifting Exercise dataset ( http://groupware.les.inf.puc-rio.br/har.) The data was cleaned, and reduced to use 54 of the available input variables. This data was then split into training and testing sets for cross validation purposes. In practice the model performed well, with an error rate of less than 1% on the cross validation set and correctly calssifying 100% of the tests set given to evaluate the assignment.
+
+
+
+
+
+

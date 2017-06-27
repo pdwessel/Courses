@@ -1,0 +1,80 @@
+---
+title: "Regession Models - Course Project"
+author: "pdwessel"
+date: "March 18, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+### Executive Summary
+
+This report looks at the relationship between transmission type and fuel efficiency, using the *mtcars* dataset. We start by evaluating the correlation between all the potential variables to identify predictors to include in the model. A number of linear multivariable models are built and compared via an ANOVA table. A model is selected with transmission type and number of carburetors as the predictors. The residual is examined for patterns that would suggest an ill fit. Finally the coefficient for transmission type tested for signifance versus the null hypothesis. The report find that a manual transmission increased fuel efficiency by ~7.09 miles/gallon over an automatic transmission.
+
+### Introduction
+
+The objective of this report is to identify generally is an automatic or manual transmission is better for fuel economy and then quatify the difference between the two. For this report the *mtcars* dataset is used.
+
+### Exploratory Analysis
+
+First we will look to see what variables are in the dataset and their respective classes. 
+```{r exp1}
+data("mtcars")
+head(mtcars,2)
+```
+From *str(mtcars)* we can see that all the variables are type numeric, and from *?mtcars* we can see that 0 and 1 represent automatic and manual transmissions respectively. 
+
+### Analysis
+
+
+#### Step 1 - Correlation
+
+As we are interested in explaining mpg with different transmisions, I am going to look at the correlation between transmission type (am) and the others provided to determine which variables are candidates for exlusions when fitting the model.
+
+```{r an1, echo = FALSE, eval = FALSE}
+cor(mtcars)
+```
+From the correlation coefficients, we see that the least correlated variables are 'qsec', 'am', 'gear', and 'carb'. My strategy for buidling linear multivariable models will be to start with 'am' and then add in these three variables according to how they are correlated to 'am'. Thus I will build 4 models, and look at the anova table to determine my 'best fit'. Note that I will explictly make carb and gear factor variables. The models will be:
+
+* mpg ~ am
+* mpg ~ am + factor(carb)
+* mpg ~ am + factor(carb) + qsec
+* mpg ~ am + factor(carb) + qsec + factor(gear)
+
+```{r an2, echo = FALSE, include = FALSE}
+fit1 <- lm(mpg~am, data = mtcars)
+fit2 <- lm(mpg~am+factor(carb), data = mtcars)
+fit3 <- lm(mpg~am+factor(carb)+qsec, data = mtcars)
+fit4 <- lm(mpg~am+factor(carb)+qsec+factor(gear), data = mtcars)
+anova(fit1, fit2, fit3, fit4)
+```
+
+From the anova table in annex a, I will discard model 4 as the probably of significance code from the p value is greater than 0.1. I took a look at the coefficients for models 2 and model 3. 
+
+```{r an3, echo = FALSE, include = FALSE}
+summary(fit2)$coef
+summary(fit3)$coef
+```
+What we see is that the intercept in model 3 is -2.07 and has a **huge** standard deviation of 9.34 and based on the test statistic we cannot infer with any confidence that this is the acutal intercept for this model. This is really due to qsec variable which is the 1/4 mile time for the car. This variable will never be zero, but given the SD I am going to throw out this model as well. 
+
+That leaves me with model 2 as mu chosen model which contains tranmission type (am) and the number of carburetors (carb) to explain mpg.
+
+The last step is to take a quick look at the residual plot to ensure that there is no discernable pattern which would suggest that I missed some predictor variable.
+
+```{r an4}
+plot(resid(fit2))
+```
+The residual values seem to be distributed fairly evenly around zero with no discernable pattern. Thus the model becomes: $$mpg = 21.29 + 7.09am -1.73carb_2 - 4.99carb_3 - 7.62carb_4 - 8.68carb_6 - 13.38carb_8$$
+
+What this means for our mpg~am relationship is that going from an automatic transmission (am = 0) to a manual transmission (am = 1) will increase the mpg by roughly 7.09 miles/gallon. 
+
+The final evaluation will the against the coefficient itself to verify that it is statistically signifance vs the null (the coefficent is zero). Looking at the coefficients for the model, we see that the test statistic for the hypothesis that the increase is 7.09 vs no increase is 4.99, which gives a p-value of 3.79e5 which mean we can reject the null hypothesis and the coefficient is valid.
+
+### Summary
+
+In this report, we looked at numerous models to look at the relationship between transmisson type and fuel efficiency (mpg). We determined that in general a manual transmision will increase fuel efficiency, and we quantifed that increase to be roughly 7.09 miles/gal.
+
+### Annex A - Code
+```{r ref.label=knitr::all_labels(),echo=TRUE,eval=TRUE}
+```

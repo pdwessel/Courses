@@ -1,0 +1,202 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary of major weather events impact on health and the economy (1950 - 2011) in the United States
+
+#### Synopsis
+
+This analysis was completed using the NOAA Storm Database dataset provided though the Coursera course Reproducible Research. The aim of this analysis was to examine which types of weather events are most harmful to population health, and which types have the greatest economic consequence. This report presents the full analysis and all the supporting code in a logical sequence strating with obtaining the data, cleaning the data, then exploring and summarizing the data. 
+
+#### Data Processing
+
+##### Obtain and load the data set
+
+A folder *data* is created to store the data set. In R, the file is downloaded.
+```{r}
+#Create a file to download the data to
+if (!dir.exists("data")) {
+        dir.create("data")
+}
+
+#Download the data
+fileurl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+destfile <- "data/Stormdata.csv.bz2"
+if (!file.exists(destfile)) { 
+        download.file(fileurl, destfile)
+}
+```
+
+The *RawData* is loaded directly from the zip file.
+```{r, cache=TRUE}
+#Read in the data
+RawData <- read.csv(destfile)
+```
+
+##### Preprocessing
+
+Load all the required packages
+```{r}
+library(dplyr)
+library(lattice)
+```
+
+This analysis is primarily concerned with weather events. Using the R command unique(Rawdata$EVTYPE) to explore the data, there are 985 unique event types recorded. However in the code book from the National Weather Service Instruction there are 48 unique event types. Thus some processing of the data is required to get to the 48 unique categories.
+
+As the objective is to determine on the weather events that have the most impact, we will clean up some of the categories that have the most records.
+
+```{r}
+#Store processed data in a new dataframe
+ProData <- RawData
+```
+
+There are a couple approaches to cleaning the data for this analysis, one we could cut out all the entries that are not identical to the ones in the code book. However, I chose to take a different approach. In exploring the dataset I would determine which are some of the most common errors for weather cateogies that are of present are significant to the two areas I will be looking at. Below is how I cleaned up the dataset for the most relevant weather categories. The most frequent errors were misspelling and / or adding in a additional descriptor or plural.  
+
+
+Fix Marine ThunderStorm Wind
+```{r}
+Marine1 <- grep("^MARINE THUNDERSTORM", ProData$EVTYPE)
+Marine2 <- grep("^MARINE TSTM", ProData$EVTYPE)
+ProData$EVTYPE[Marine1] <- "MARINE THUNDERSTORM WIND"
+ProData$EVTYPE[Marine2] <- "MARINE THUNDERSTORM WIND"
+```
+
+
+Fix Thunderstorm Wind
+```{r}
+Thun1 <- grep("^TSTM W", ProData$EVTYPE)
+Thun2 <- grep("^THUNDER", ProData$EVTYPE)
+ProData$EVTYPE[Thun1] <- "THUNDERSTORM WIND"
+ProData$EVTYPE[Thun2] <- "THUNDERSTORM WIND"
+```
+
+Fix Heavy Snow
+```{r}
+ProData$EVTYPE[grep("HEAVY SNOW", ProData$EVTYPE)] <- "HEAVY SNOW"
+```
+
+Fix Hail
+```{r}
+ProData$EVTYPE[grep("^HAIL", ProData$EVTYPE)] <- "HAIL"
+```
+
+Fix Blizzard
+```{r}
+ProData$EVTYPE[grep("BLIZZARD", ProData$EVTYPE)] <- "BLIZZARD"
+```
+
+Fix Hurricane
+```{r}
+ProData$EVTYPE[grep("HURRICANE", ProData$EVTYPE)] <- "HURRICANE"
+ProData$EVTYPE[grep("TYPHOON", ProData$EVTYPE)] <- "HURRICANE"
+```
+
+Fix Heat
+```{r}
+ProData$EVTYPE[grep("^HEAT", ProData$EVTYPE)] <- "HEAT"
+```
+
+Fix WildFire
+```{r}
+ProData$EVTYPE[grep("FIRE", ProData$EVTYPE)] <- "WILDFIRE"
+```
+
+Fix Lightning
+```{r}
+ProData$EVTYPE[grep("LIGHT", ProData$EVTYPE)] <- "LIGHTNING"
+```
+
+Fix Extreme Cold/Wind Chill
+```{r}
+ProData$EVTYPE[grep("EXTREME", ProData$EVTYPE)] <- "EXTREME COLD/WIND CHILL"
+```
+
+##### Analysis
+
+For the health impacts, I combined the fatalities and injuries to get an overall picture of the weather effects on the population health. 
+
+```{r}
+health <- ProData %>% group_by(EVTYPE) %>% summarise(INJURIES = sum(INJURIES + FATALITIES))
+
+#Sort the weather events with the most health impacts to least
+health <- health[order(-health$INJURIES),]
+```
+
+I will add a column to the data which represents the propotion of health events by weather type
+
+```{r}
+total_injuries <- sum(health$INJURIES)
+health <- mutate(health, prop = 100*INJURIES/total_injuries)
+
+#Create a vector with the top ten weather types for health impacts
+Top_health <- health[1:10,]
+```
+
+For the economic impact, there are two recorded economic consequences, the property damage and crop damage. The amount for each is recorded in two columns, the first gives a numeric figure and the second gives a magnitude (K, M, B).
+
+For the purpose of this exercise, data that has its magnitude stored incorrectly will be stripped out. These dollar figures need to processed before any grouping takes place.
+
+```{r}
+#Create a look up table for the magnitude units
+magnitude <- c(1000,1000,1000000,1000000,1000000000,1000000000)
+units <- c("k", "K", "m", "M", "b", "B")
+names(magnitude) <- units
+
+#Create a vector of the columns we want for econ data
+econ_col <- c("EVTYPE", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
+EconData <- ProData[,econ_col]
+
+#Subset the valid entries for dmg
+EconData <- subset(EconData, PROPDMGEXP %in% units | CROPDMGEXP %in% units)
+
+#Create two new columns with a dollar value for the damage
+EconData <- mutate(EconData, PROP = PROPDMG*magnitude[as.character(PROPDMGEXP)])
+EconData <- mutate(EconData, CROP = CROPDMG*magnitude[as.character(CROPDMGEXP)])
+```
+
+Now group all the dollar figures by events type and summarize the sums
+
+```{r}
+EconData <- EconData %>% group_by(EVTYPE) %>% summarise(Total_Dmg = sum(PROP + CROP, na.rm = TRUE))
+
+#Sort with costliest events first
+EconData <- EconData[order(-EconData$Total_Dmg),]
+#Scale to represent billions ($)
+EconData <- mutate(EconData, Total_Dmg = Total_Dmg/1000000000)
+
+#Create a vector with the top ten costliest weather types
+Top_EconData <- EconData[1:10,]
+```
+
+
+#### Results
+
+##### Health Impacts
+
+The figure below shows the proportion of cumulative total of negative health impacts that each of the top 10 weather events recorded over the 1950 to November 2011.
+
+```{r}
+#Set the order of factor variables as they current are
+Top_health$EVTYPE <- reorder(Top_health$EVTYPE, Top_health$prop)
+
+#Create the plot
+barchart(Top_health$EVTYPE~Top_health$prop, xlim=c(0,100), xlab="Proportion of health events", ylab="Weather Type", main="Weather Types porportion of negative health events 1950 - Nov 2011")
+dev.off()
+```
+
+Quite clearly from this figure, Tornados account for the bulk of negative health effects accounting for more than 62% of all negative health events on record. The next three biggest contributors are Thunderstorm Winds (~6.5%), Excessive Heat (~5.5%) and Floods (~4.5%).
+
+##### Economic Impacts
+
+The figure below plots the total economic cost, by weather category for the top 10 categories with the highest bill. The cost incorporates property damage and crop damage into a single bill. 
+
+```{r}
+#Set the order of factor variables as they current are
+Top_EconData$EVTYPE <- reorder(Top_EconData$EVTYPE, Top_EconData$Total_Dmg)
+
+#Create the plot
+barchart(Top_EconData$EVTYPE~Top_EconData$Total_Dmg, xlab="Cumulative Cost in billions ($)", ylab="Weather Type", main="Cumulative bill for Weather Types1950 - Nov 2011", xlim =c(0,150))
+#dev.off()
+```
+
+Clearly, flooding is he most damaging weather type in terms of cost. Hurricanes are the second most costly weather event followed by Tornados. 
